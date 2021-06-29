@@ -34,13 +34,14 @@ async function checkBlock() {
                     let binaryFunction = (tx.input).substring(0, 10);
                     if((binaryFunction == methodIdswapExactETHForTokens)){
                         console.log('Transaction found on block: ' + number);
+                        // console.log(web3.eth.abi.decodeParameters(['uint256', 'address[]', 'address', 'uint256'],tx.input.substring(10)));
                         let time = new Date();
                         console.log({
                             hash: tx.hash , 
                             from: tx.from, 
                             value: web3.utils.fromWei(tx.value, 'ether'), 
                             timestamp: time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds() + " " + time.getDate() + "/" + (time.getMonth()+1) + "/" + time.getFullYear(),
-                            input: web3.eth.abi.decodeParameters(['uint256', 'address[]', 'address', 'uint256'],tx.input)
+                            input: web3.eth.abi.decodeParameters(['uint256', 'address[]', 'address', 'uint256'],tx.input.substring(10))
                         });
                     }
                 }
