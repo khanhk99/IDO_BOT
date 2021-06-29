@@ -11,21 +11,46 @@ const factoryContract = new web3.eth.Contract(FACTORY_ABI, process.env.FACTORY)
 // router
 const routerContract = new web3.eth.Contract(ROUTER_ABI, process.env.ROUTER)
 
-// const allPairs = factoryContract.methods.createPair("0xc778417e063141139fce010982780140aa0cd5ab", "0xad6d458402f60fd3bd25163575031acdce07538d").send((err, result) => {
-//     console.log(err)
-//     console.log(result)
-// })
+const POLLING_INTERVAL = 1000 // 1s
 
-// routerContract.methods.WETH().call((err, result) => {
-//     console.log(result)
-// })
+// console.log(factoryContract.events.PairCreated())
+// console.log(factoryContract.methods.allPairsLength().call())
 
-factoryContract.on('PairCreated', function(token0, token1, pairAddress){
-    console.log(`
-    New pair detected
-    =================
-    token0: ${token0}
-    token1: ${token1}
-    pairAddress: ${pairAddress}
-  `);
-})
+const methodIdCreatePair = "0xc9c65396";
+const methodIdAddLiquidity = "0xe8e33700";
+const methodIdAddLiquidityETH = "0xf305d719";
+const methodIdswapExactETHForTokens = "0x7ff36ab5";
+
+async function checkBlock() {
+    let block = await web3.eth.getBlock('latest');
+    let number = block.number;
+    console.log('Searching block ' + number);
+
+    if (block != null && block.transactions != null) {
+        try{
+            for (let txHash of block.transactions) {
+                let tx = await web3.eth.getTransaction(txHash);
+                if (process.env.ROUTER == tx.to) {
+                    let binaryFunction = (tx.input).substring(0, 10);
+                    if((binaryFunction == methodIdswapExactETHForTokens)){
+                        console.log('Transaction found on block: ' + number);
+                        let time = new Date();
+                        console.log({
+                            hash: tx.hash , 
+                            from: tx.from, 
+                            value: web3.utils.fromWei(tx.value, 'ether'), 
+                            timestamp: time.getHours() + ":" + time.getMinutes() + ":" + time.getSeconds() + " " + time.getDate() + "/" + (time.getMonth()+1) + "/" + time.getFullYear(),
+                            input: web3.eth.abi.decodeParameters(['uint256', 'address[]', 'address', 'uint256'],tx.input)
+                        });
+                    }
+                }
+            }
+        }catch (error){
+            console.error(error);
+        }
+    }
+}
+
+setInterval(() => {
+    checkBlock();
+},  POLLING_INTERVAL);
