@@ -1,0 +1,1 @@
+RPC_URL="wss://mainnet.infura.io/ws/v3/46728d51914148fc92940610f065d47b"
