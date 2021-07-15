@@ -12,18 +12,18 @@ const web3 = new Web3(new HDWalletProvider(process.env.PRIVATE_KEY, process.env.
 const { FACTORY_ABI, ROUTER_ABI, PAIR_ABI, TOKENCORE_ABI } = require('./contract_abi.js');
 
 // Thay đổi số liệu
-const FactoryAddress = "0xcA143Ce32Fe78f1f7019d7d551a6402fC5350c73";
-const RouterAddress = "0x10ED43C718714eb63d5aA57B78B54704E256024E";
-const TokenCore = "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c";
-const TokenList = "0x0e09fabb73bd3ade0a17ecc321fd13a19e81ce82";
-const LiquidityAdd = 10000; // Lượng thanh khoản của TokenCore sẽ được add
-const TokenCoreSwap = 1; // Số lượng TokenCore muốn swap
+const FactoryAddress = "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f";
+const RouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+const TokenCore = "0xc778417e063141139fce010982780140aa0cd5ab";
+const TokenList = "0x5531d5163a026ff36bbcf213144f6922bebb1832";
+const LiquidityAdd = 1; // Lượng thanh khoản của TokenCore sẽ được add
+const TokenCoreSwap = 0.1; // Số lượng TokenCore muốn swap
 const Profit = '' ;   //uint: %, số lượng lợi nhuận muốn kiếm
-const POLLING_INTERVAL = 1000;
+const POLLING_INTERVAL = 3500;
 
 const FactoryContract = new web3.eth.Contract(FACTORY_ABI, FactoryAddress);
 const RouterContract = new web3.eth.Contract(ROUTER_ABI, RouterAddress);
-const CoreContract = new web3.eth.Contract(TOKENCORE_ABI, TokenCore);
+// const CoreContract = new web3.eth.Contract(TOKENCORE_ABI, TokenCore);
 
 const PairAddress = FactoryContract.methods.getPair(TokenCore, TokenList).call()
 
@@ -45,15 +45,17 @@ async function checkBlock() {
     var priceTokenList = tokenCoreReserve/tokenListReserve;
 
     if(tokenCoreReserve >= LiquidityAdd){
+        console.log(`tokenCoreReserve = ${tokenCoreReserve}`);
         clearInterval(checkLiquidity)
         buyToken(priceTokenList);
     }
 }
 
 async function buyToken(priceTokenList){
-    if((await checkTokenCoreBalance()) > TokenCoreSwap){
+    var tokenCoreBalance = await checkTokenCoreBalance() 
+    console.log(`tokenCoreBalance = ${tokenCoreBalance}`)
+    if(tokenCoreBalance > TokenCoreSwap){
         var amountOut = TokenCoreSwap/priceTokenList;
-
         var amountOutMin = Number(web3.utils.toWei(String(amountOut*0.5/100), 'ether'));
         var path = [
             TokenCore,
@@ -68,12 +70,13 @@ async function buyToken(priceTokenList){
             deadline
         )
         .send()
+        .then(console.log);
     }
 }
 
 async function checkTokenCoreBalance(){
-    var balance = await CoreContract.methods.balanceOf(process.env.ACCOUNT).call();
-    return Number(balance);
+    var balance = await web3.eth.getBalance(process.env.ACCOUNT);
+    return Number(web3.utils.fromWei(String(balance), 'ether'));
 }
 
 var checkLiquidity = setInterval(async () => {
