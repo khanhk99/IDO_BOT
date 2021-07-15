@@ -1,1 +1,2 @@
-RPC_URL="wss://mainnet.infura.io/ws/v3/46728d51914148fc92940610f065d47b"
+Ethereum="https://mainnet.infura.io/v3/9aa3d95b3bc440fa88ea12eaa4456161"
+BSC="https://bsc-dataseed.binance.org/"
