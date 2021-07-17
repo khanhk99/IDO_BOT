@@ -17,7 +17,7 @@ const RouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 const TokenCore = "0xc778417e063141139fce010982780140aa0cd5ab";
 const TokenList = "0x5531d5163a026ff36bbcf213144f6922bebb1832";
 const LiquidityAdd = 1; // Lượng thanh khoản của TokenCore sẽ được add
-const TokenCoreSwap = 0.1; // Số lượng TokenCore muốn swap
+const TokenCoreSwap = 0.001; // Số lượng TokenCore muốn swap
 const Profit = '';   //uint: %, số lượng lợi nhuận muốn kiếm
 const POLLING_INTERVAL = 3500;
 
@@ -30,9 +30,10 @@ const TokenListSdk = new Token(3, TokenList, 18);
 const TokenCoreSdk = new Token(3, TokenCore, 18);
 
 const SettingSwap = {
-    gasLimit: 8000000, 
+    gasLimit: 300000, 
     gasPrice: web3.utils.toWei('10', 'Gwei'),
-    from: process.env.ACCOUNT
+    from: process.env.ACCOUNT,
+    value: web3.utils.toWei(String(TokenCoreSwap), 'ether')
   }
 
 async function checkBlock() {
@@ -72,11 +73,7 @@ async function buyToken() {
         var amountOutMin = trade.minimumAmountOut(slippageTolerance).raw ;
         var path = [TokenCore, TokenList];
         var deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 20 minutes from the current Unix time
-
-        console.log(`deadline ${deadline}`);
-        // var value = trade.inputAmount.raw // needs to be converted to e.g. hex
         console.log(`amountOutMin ${amountOutMin} type ${typeof amountOutMin} \n`);
-        // console.log(`value ${value} type ${typeof value} \n`);
 
         console.log(`Swaping ...... \n`)
         await RouterContract.methods.swapExactETHForTokens(
@@ -84,8 +81,9 @@ async function buyToken() {
             path,
             process.env.ACCOUNT,
             deadline
-        ).send(SettingSwap, function(transactionHash){
-            console.log(`transactionHash: ${transactionHash}`)
+        ).send(SettingSwap)
+        .on('receipt', function(receipt){
+            console.log(receipt);
         });
     }
 }
