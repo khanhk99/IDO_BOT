@@ -29,6 +29,12 @@ const PairAddress = FactoryContract.methods.getPair(TokenCore, TokenList).call()
 const TokenListSdk = new Token(3, TokenList, 18);
 const TokenCoreSdk = new Token(3, TokenCore, 18);
 
+const SettingSwap = {
+    gasLimit: 8000000, 
+    gasPrice: web3.utils.toWei('10', 'Gwei'),
+    from: process.env.ACCOUNT
+  }
+
 async function checkBlock() {
     var PairContract = new web3.eth.Contract(PAIR_ABI, await PairAddress);
     var token0 = await PairContract.methods.token0().call();
@@ -56,30 +62,31 @@ async function buyToken() {
     console.log(`tokenCoreBalance = ${tokenCoreBalance}, typeof: ${typeof tokenCoreBalance} \n`);
 
     if (tokenCoreBalance > TokenCoreSwap) {
-
-
         var pair = await Fetcher.fetchPairData(TokenListSdk, TokenCoreSdk);
         var route = new Route([pair], TokenCoreSdk);
         var amountIn = web3.utils.toWei(String(TokenCoreSwap), 'ether');
         console.log(`amountIn ${amountIn} \n`);
         var trade = new Trade(route, new TokenAmount(TokenCoreSdk, amountIn), TradeType.EXACT_INPUT);
+
         var slippageTolerance = new Percent('50', '10000');
         var amountOutMin = trade.minimumAmountOut(slippageTolerance).raw ;
         var path = [TokenCore, TokenList];
         var deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 20 minutes from the current Unix time
-        console.log(`deadline ${deadline}`);
-        // var value = trade.inputAmount.raw // // needs to be converted to e.g. hex
-        console.log(`amountOutMin ${amountOutMin} type ${typeof amountOutMin} \n`);
 
-        RouterContract.methods.swapExactETHForTokens(
-            TokenCoreSwap,
-            620141152087907029831774,
+        console.log(`deadline ${deadline}`);
+        // var value = trade.inputAmount.raw // needs to be converted to e.g. hex
+        console.log(`amountOutMin ${amountOutMin} type ${typeof amountOutMin} \n`);
+        // console.log(`value ${value} type ${typeof value} \n`);
+
+        console.log(`Swaping ...... \n`)
+        await RouterContract.methods.swapExactETHForTokens(
+            String(amountOutMin),
             path,
             process.env.ACCOUNT,
             deadline
-        )
-            .send({from: process.env.ACCOUNT})
-            .then(console.log);
+        ).send(SettingSwap, function(transactionHash){
+            console.log(`transactionHash: ${transactionHash}`)
+        });
     }
 }
 
